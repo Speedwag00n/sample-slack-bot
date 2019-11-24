@@ -82,6 +82,8 @@ class Compress(command.Command):
                 config_data = json.load(config)
         except FileNotFoundError:
             raise Exception("Archive must contain config.json file with compressing configuration")
+        except json.decoder.JSONDecodeError:
+            raise Exception("Config.json must contains valid JSON")
 
         try:
             width = int(config_data["size_x"])
@@ -97,10 +99,19 @@ class Compress(command.Command):
         except KeyError:
             raise Exception("Config must contain \"size_y\" field")
 
-        return {"width": width, "height": height}
+        try:
+            make_bw = bool(config_data["black_white"])
+        except ValueError:
+            raise Exception("Field \"size_y\" must be an boolean")
+        except KeyError:
+            make_bw = False
+
+        return {"width": width, "height": height, "make_bw": make_bw}
 
     @staticmethod
     def __compress_image(image_path, config):
         image = Image.open(image_path)
         resized_image = image.resize((config["width"], config["height"]), Image.ANTIALIAS)
+        if config["make_bw"]:
+            resized_image = resized_image.convert("L")
         resized_image.save(image_path)
