@@ -10,7 +10,12 @@ def message(**payload):
     keys = command_handler.CommandHandler().commands
     for key in keys:
         if str(data["text"]).lower().startswith("!" + str(key)):
-            keys[key].execute(payload)
+            try:
+                keys[key].execute(payload)
+            except Exception:
+                channel_id = data["channel"]
+                web_client = payload["web_client"]
+                web_client.chat_postMessage(channel=channel_id, text="Unexpected error happened")
             break
 
 
