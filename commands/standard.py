@@ -26,6 +26,7 @@ class Compress(command.Command):
 
     STORAGE_PATH = "temp/"
     CONFIG_NAME = "/config.json"
+    IMAGE_NAMES = ("/image.png", "/image.jpg")
 
     variants = ["comp", "compress"]
 
@@ -61,12 +62,11 @@ class Compress(command.Command):
                 return
 
             try:
-                if os.path.exists(file_path + "/image.png"):
-                    self.__compress_image(file_path + "/image.png", config)
-                    web_client.files_upload(channels=channel_id, file=file_path + "/image.png")
-                elif os.path.exists(file_path + "/image.jpg"):
-                    self.__compress_image(file_path + "/image.jpg", config)
-                    web_client.files_upload(channels=channel_id, file=file_path + "/image.jpg")
+                for image_name in self.IMAGE_NAMES:
+                    if os.path.exists(file_path + image_name):
+                        self.__compress_image(file_path + image_name, config)
+                        web_client.files_upload(channels=channel_id, file=file_path + image_name)
+                        break
                 else:
                     web_client.chat_postMessage(channel=channel_id, text="Archive must contain image.png or image.jpg file")
             except Exception:
