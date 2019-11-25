@@ -53,7 +53,7 @@ class Compress(command.Command):
             web_client.chat_postMessage(channel=channel_id, text="You must send archive with this command")
             return
 
-        file_path = self.STORAGE_PATH + data["files"][0]["id"]
+        file_path = Compress.STORAGE_PATH + data["files"][0]["id"]
         file_name = file_path + "/" + data["files"][0]["name"]
         token = os.environ["SLACK_SAMPLE_BOT_TOKEN"]
         response = requests.get(file_url, headers={"Authorization": "Bearer " + token})
@@ -68,15 +68,15 @@ class Compress(command.Command):
                 return
 
             try:
-                config = Compress.__parse_config(file_path + self.CONFIG_NAME)
+                config = Compress.parse_config(file_path + Compress.CONFIG_NAME)
             except ConfigParseError as e:
                 web_client.chat_postMessage(channel=channel_id, text=e.args[0])
                 return
 
             try:
-                for image_name in self.IMAGE_NAMES:
+                for image_name in Compress.IMAGE_NAMES:
                     if os.path.exists(file_path + image_name):
-                        Compress.__compress_image(file_path + image_name, config)
+                        Compress.compress_image(file_path + image_name, config)
                         web_client.files_upload(channels=channel_id, file=file_path + image_name)
                         break
                 else:
@@ -88,7 +88,7 @@ class Compress(command.Command):
             web_client.chat_postMessage(channel=channel_id, text="Could not download file")
 
     @staticmethod
-    def __parse_config(config_path):
+    def parse_config(config_path):
         try:
             with open(config_path) as config:
                 config_data = json.load(config)
@@ -121,7 +121,7 @@ class Compress(command.Command):
         return {"width": width, "height": height, "make_bw": make_bw}
 
     @staticmethod
-    def __compress_image(image_path, config):
+    def compress_image(image_path, config):
         image = Image.open(image_path)
         resized_image = image.resize((config["width"], config["height"]), Image.ANTIALIAS)
         if config["make_bw"]:
@@ -151,13 +151,13 @@ class Help(command.Command):
             web_client.chat_postMessage(channel=channel_id, text="".join(text_parts))
             return
         try:
-            text = Help.__build_command_description(self.commands_dict[command_name], False)
+            text = Help.build_command_description(self.commands_dict[command_name], False)
             web_client.chat_postMessage(channel=channel_id, text=text)
         except KeyError:
             web_client.chat_postMessage(channel=channel_id, text="Unknown command. Use help command without args")
 
     @staticmethod
-    def __build_command_description(current_command, append_new_line):
+    def build_command_description(current_command, append_new_line):
         message_parts = list()
         message_parts.extend(" / ".join(list(map(Help.__add_prefix, current_command.variants))))
         if current_command.args:
