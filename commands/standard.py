@@ -57,8 +57,8 @@ class Compress(command.Command):
 
             try:
                 config = self.__parse_config(file_path + self.CONFIG_NAME)
-            except Exception as ex:
-                web_client.chat_postMessage(channel=channel_id, text=ex.args[0])
+            except ConfigParseError as e:
+                web_client.chat_postMessage(channel=channel_id, text=e.args[0])
                 return
 
             try:
@@ -69,7 +69,7 @@ class Compress(command.Command):
                         break
                 else:
                     web_client.chat_postMessage(channel=channel_id, text="Archive must contain image.png or image.jpg file")
-            except Exception:
+            except ConfigParseError:
                 web_client.chat_postMessage(channel=channel_id, text="Could not compress image")
 
         else:
@@ -80,29 +80,29 @@ class Compress(command.Command):
         try:
             with open(config_path) as config:
                 config_data = json.load(config)
-        except FileNotFoundError:
-            raise Exception("Archive must contain config.json file with compressing configuration")
+        except FileNotFoundError as e:
+            raise ConfigParseError("Archive must contain config.json file with compressing configuration") from e
         except json.decoder.JSONDecodeError:
-            raise Exception("Config.json must contains valid JSON")
+            raise ConfigParseError("Config.json must contains valid JSON")
 
         try:
             width = int(config_data["size_x"])
-        except ValueError:
-            raise Exception("Field \"size_x\" must be an integer")
-        except KeyError:
-            raise Exception("Config must contain \"size_x\" field")
+        except ValueError as e:
+            raise ConfigParseError("Field \"size_x\" must be an integer") from e
+        except KeyError as e:
+            raise ConfigParseError("Config must contain \"size_x\" field") from e
 
         try:
             height = int(config_data["size_y"])
-        except ValueError:
-            raise Exception("Field \"size_y\" must be an integer")
-        except KeyError:
-            raise Exception("Config must contain \"size_y\" field")
+        except ValueError as e:
+            raise ConfigParseError("Field \"size_y\" must be an integer") from e
+        except KeyError as e:
+            raise ConfigParseError("Config must contain \"size_y\" field") from e
 
         try:
             make_bw = bool(config_data["black_white"])
-        except ValueError:
-            raise Exception("Field \"size_y\" must be an boolean")
+        except ValueError as e:
+            raise ConfigParseError("Field \"size_y\" must be an boolean") from e
         except KeyError:
             make_bw = False
 
@@ -115,3 +115,7 @@ class Compress(command.Command):
         if config["make_bw"]:
             resized_image = resized_image.convert("L")
         resized_image.save(image_path)
+
+
+class ConfigParseError(Exception):
+    pass

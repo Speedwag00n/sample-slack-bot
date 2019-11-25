@@ -12,7 +12,8 @@ def message(**payload):
         if str(data["text"]).lower().startswith("!" + str(key)):
             try:
                 keys[key].execute(payload)
-            except Exception:
+            except Exception as e:
+                logger.exception(e)
                 channel_id = data["channel"]
                 web_client = payload["web_client"]
                 web_client.chat_postMessage(channel=channel_id, text="Unexpected error happened")
