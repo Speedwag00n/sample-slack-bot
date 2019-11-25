@@ -1,23 +1,33 @@
 import os
 import logging
 import slack
-import commands.command_handler as command_handler
+import commands.command_manager as command_manager
+import commands.standard
 
 
 @slack.RTMClient.run_on(event="message")
 def message(**payload):
     data = payload["data"]
-    keys = command_handler.CommandHandler().commands
-    for key in keys:
-        if str(data["text"]).lower().startswith("!" + str(key)):
-            try:
-                keys[key].execute(payload)
-            except Exception as e:
-                logger.exception(e)
-                channel_id = data["channel"]
-                web_client = payload["web_client"]
-                web_client.chat_postMessage(channel=channel_id, text="Unexpected error happened")
-            break
+    keys = command_manager.CommandManager().commands
+    channel_id = data["channel"]
+    web_client = payload["web_client"]
+    try:
+        if data["subtype"] == "bot_message":
+            return
+    except KeyError:
+        pass
+    if not str(data["text"]).startswith(commands.standard.COMMAND_PREFIX):
+        return
+    keyword = str(data["text"].split(" ", maxsplit=1)[0]).lower()[1::]
+    try:
+        command = keys[keyword]
+        try:
+            command.execute(payload)
+        except Exception as e:
+            logger.exception(e)
+            web_client.chat_postMessage(channel=channel_id, text="Unexpected error happened")
+    except KeyError:
+        web_client.chat_postMessage(channel=channel_id, text="Unknown command. Please, use help command")
 
 
 if __name__ == "__main__":

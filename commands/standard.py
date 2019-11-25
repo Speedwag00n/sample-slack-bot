@@ -7,9 +7,14 @@ import json
 from PIL import Image
 
 
+COMMAND_PREFIX = "!"
+
+
 class Greeting(command.Command):
 
     variants = ["hi", "hello"]
+    args = []
+    description = "Bot says you \"Hi!\""
 
     def execute(self, payload):
         data = payload["data"]
@@ -29,6 +34,13 @@ class Compress(command.Command):
     IMAGE_NAMES = ("/image.png", "/image.jpg")
 
     variants = ["comp", "compress"]
+    args = []
+    description = "Bot compress image by specified configuration. With this command you must send:\n" \
+                  "\t* config.json file with JSON that contains following fields:\n" \
+                  "\t\t- size_x - specify width of image\n" \
+                  "\t\t- size_y - specify height of image\n" \
+                  "\t\t- black_white(optional) - specify should bot make image black and white or not\n" \
+                  "\t* image.png / image.jpg - specify image that bot should compress\n"
 
     def execute(self, payload):
         data = payload["data"]
@@ -56,7 +68,7 @@ class Compress(command.Command):
                 return
 
             try:
-                config = self.__parse_config(file_path + self.CONFIG_NAME)
+                config = Compress.__parse_config(file_path + self.CONFIG_NAME)
             except ConfigParseError as e:
                 web_client.chat_postMessage(channel=channel_id, text=e.args[0])
                 return
@@ -64,7 +76,7 @@ class Compress(command.Command):
             try:
                 for image_name in self.IMAGE_NAMES:
                     if os.path.exists(file_path + image_name):
-                        self.__compress_image(file_path + image_name, config)
+                        Compress.__compress_image(file_path + image_name, config)
                         web_client.files_upload(channels=channel_id, file=file_path + image_name)
                         break
                 else:
@@ -115,6 +127,52 @@ class Compress(command.Command):
         if config["make_bw"]:
             resized_image = resized_image.convert("L")
         resized_image.save(image_path)
+
+
+class Help(command.Command):
+
+    commands_dict = None
+    commands_list = None
+
+    variants = ["help"]
+    args = ["<command_name>"]
+    description = "Bot writes description for specified command"
+
+    def execute(self, payload):
+        data = payload["data"]
+        channel_id = data["channel"]
+        web_client = payload["web_client"]
+        try:
+            command_name = data["text"].split(" ", maxsplit=1)[1]
+        except IndexError:
+            text_parts = list()
+            for current_command in self.commands_list:
+                text_parts.append(Help.__build_command_description(current_command, True))
+            web_client.chat_postMessage(channel=channel_id, text="".join(text_parts))
+            return
+        try:
+            text = Help.__build_command_description(self.commands_dict[command_name], False)
+            web_client.chat_postMessage(channel=channel_id, text=text)
+        except KeyError:
+            web_client.chat_postMessage(channel=channel_id, text="Unknown command. Use help command without args")
+
+    @staticmethod
+    def __build_command_description(current_command, append_new_line):
+        message_parts = list()
+        message_parts.extend(" / ".join(list(map(Help.__add_prefix, current_command.variants))))
+        if current_command.args:
+            message_parts.append(" (args: ")
+            message_parts.extend(current_command.args)
+            message_parts.append(")")
+        message_parts.append(" - ")
+        message_parts.extend(current_command.description)
+        if append_new_line:
+            message_parts.append("\n")
+        return "".join(message_parts)
+
+    @staticmethod
+    def __add_prefix(x):
+        return COMMAND_PREFIX + x
 
 
 class ConfigParseError(Exception):
