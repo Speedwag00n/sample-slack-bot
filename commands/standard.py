@@ -29,7 +29,7 @@ class Greeting(command.Command):
 
 class Compress(command.Command):
 
-    STORAGE_PATH = "temp/"
+    STORAGE_PATH = "/tmp/"
     CONFIG_NAME = "/config.json"
     IMAGE_NAMES = ("/image.png", "/image.jpg")
 
@@ -147,7 +147,7 @@ class Help(command.Command):
         except IndexError:
             text_parts = list()
             for current_command in self.commands_list:
-                text_parts.append(Help.__build_command_description(current_command, True))
+                text_parts.append(Help.build_command_description(current_command, True))
             web_client.chat_postMessage(channel=channel_id, text="".join(text_parts))
             return
         try:
