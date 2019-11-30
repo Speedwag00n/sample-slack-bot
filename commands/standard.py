@@ -56,7 +56,8 @@ class Compress(command.Command):
         response = requests.get(file_url, headers={"Authorization": "Bearer " + token})
         if response.status_code == 200:
             os.mkdir(file_path)
-            open(file_name, "wb").write(response.content)
+            with open(file_name, "wb") as archive:
+                archive.write(response.content)
 
             try:
                 Archive(file_name).extractall(file_path)
