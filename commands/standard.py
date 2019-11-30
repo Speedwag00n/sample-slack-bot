@@ -7,9 +7,6 @@ import json
 from PIL import Image
 
 
-COMMAND_PREFIX = "!"
-
-
 class Greeting(command.Command):
 
     variants = ["hi", "hello"]
@@ -33,7 +30,7 @@ class Compress(command.Command):
     CONFIG_NAME = "/config.json"
     IMAGE_NAMES = ("/image.png", "/image.jpg")
 
-    variants = ["comp", "compress"]
+    variants = ["", "comp", "compress"]
     args = []
     description = "Bot compress image by specified configuration. With this command you must send:\n" \
                   "\t* config.json file with JSON that contains following fields:\n" \
@@ -159,7 +156,8 @@ class Help(command.Command):
     @staticmethod
     def build_command_description(current_command, append_new_line):
         message_parts = list()
-        message_parts.extend(" / ".join(list(map(Help.__add_prefix, current_command.variants))))
+        message_parts.append(" # ")
+        message_parts.extend(" / ".join(current_command.variants))
         if current_command.args:
             message_parts.append(" (args: ")
             message_parts.extend(current_command.args)
@@ -169,10 +167,6 @@ class Help(command.Command):
         if append_new_line:
             message_parts.append("\n")
         return "".join(message_parts)
-
-    @staticmethod
-    def __add_prefix(x):
-        return COMMAND_PREFIX + x
 
 
 class ConfigParseError(Exception):
