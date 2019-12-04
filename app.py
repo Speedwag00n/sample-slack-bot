@@ -11,7 +11,12 @@ def message(**payload):
     channel_id = data["channel"]
     web_client = payload["web_client"]
     try:
-        if data["user"] == "UQWQ39V9N" or data["subtype"] == "bot_message":
+        if data["subtype"] == "bot_message":
+            return
+    except KeyError:
+        pass
+    try:
+        if data["user"] == "UQWQ39V9N":
             return
     except KeyError:
         pass
